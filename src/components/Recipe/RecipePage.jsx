@@ -6,50 +6,8 @@ import { useMemo, useState } from "react";
 import styled from "@emotion/styled";
 import RecipeCard from "./RecipeCard";
 import SkeletonCard from "./SkeletonCard";
+import { recipeMockData } from "./recipeMockData";
 import { useFridgeStore } from "../../store/useFridgeStore";
-
-const recipeMockData = [
-  {
-    id: "recipe-a",
-    name: "두부 달걀 볶음밥",
-    time: "12분",
-    level: "중",
-    emoji: "🍳",
-    cover:
-      "linear-gradient(135deg, rgba(247,224,180,0.72) 0%, rgba(255,255,255,0.35) 45%, rgba(210,174,111,0.72) 100%), #efe7da",
-    ingredients: ["🥚 계란(D-2),", "🧊 두부(D-3)"],
-  },
-  {
-    id: "recipe-b",
-    name: "치킨 브로콜리 샐러드",
-    time: "16분",
-    level: "중",
-    emoji: "🥗",
-    cover:
-      "linear-gradient(135deg, rgba(184,219,157,0.72) 0%, rgba(255,255,255,0.38) 42%, rgba(102,158,96,0.66) 100%), #e4eadc",
-    ingredients: ["🍗 닭가슴살,", "🥬 시금치"],
-  },
-  {
-    id: "recipe-c",
-    name: "토마토 두부 스튜",
-    time: "18분",
-    level: "하",
-    emoji: "🍲",
-    cover:
-      "linear-gradient(135deg, rgba(234,126,92,0.68) 0%, rgba(255,255,255,0.34) 45%, rgba(176,68,52,0.6) 100%), #f1ded7",
-    ingredients: ["🍅 토마토,", "🧊 두부"],
-  },
-  {
-    id: "recipe-d",
-    name: "양파 감자 버터구이",
-    time: "20분",
-    level: "하",
-    emoji: "🥔",
-    cover:
-      "linear-gradient(135deg, rgba(244,211,142,0.75) 0%, rgba(255,255,255,0.36) 48%, rgba(213,162,73,0.64) 100%), #eee2c8",
-    ingredients: ["🧅 양파,", "🥔 감자"],
-  },
-];
 
 function getDaysLeft(expiresAt) {
   const today = new Date();
