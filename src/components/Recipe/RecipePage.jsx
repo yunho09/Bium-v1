@@ -5,6 +5,7 @@
 import { useMemo, useState } from "react";
 import styled from "@emotion/styled";
 import RecipeCard from "./RecipeCard";
+import RecipeDetailPage from "./RecipeDetailPage";
 import SkeletonCard from "./SkeletonCard";
 import { recipeMockData } from "./recipeMockData";
 import { useFridgeStore } from "../../store/useFridgeStore";
@@ -22,6 +23,7 @@ function RecipePage() {
   const [loading, setLoading] = useState(false);
   const [recipes, setRecipes] = useState(recipeMockData);
   const [prioritizeUrgent, setPrioritizeUrgent] = useState(true);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
 
   const skeletonCount = useMemo(() => Array.from({ length: 4 }), []);
   const urgentItems = useMemo(() => {
@@ -47,6 +49,10 @@ function RecipePage() {
     }, 900);
   };
 
+  if (selectedRecipe) {
+    return <RecipeDetailPage recipe={selectedRecipe} onBack={() => setSelectedRecipe(null)} />;
+  }
+
   return (
     <Wrapper>
       <Header>
@@ -65,7 +71,8 @@ function RecipePage() {
       <ContentGrid>
         <RecipeGrid>
           {loading && skeletonCount.map((_, index) => <SkeletonCard key={`s-${index}`} />)}
-          {!loading && recipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} />)}
+          {!loading &&
+            recipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} onSelect={setSelectedRecipe} />)}
         </RecipeGrid>
 
         <UrgentBox>
