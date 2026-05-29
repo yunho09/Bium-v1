@@ -9,6 +9,7 @@ import RecipeDetailPage from "./RecipeDetailPage";
 import SkeletonCard from "./SkeletonCard";
 import { generateRecipes } from "../../api/generateRecipes";
 import { useFridgeStore } from "../../store/useFridgeStore";
+import { useRecipeStore } from "../../store/useRecipeStore";
 
 function getDaysLeft(expiresAt) {
   const today = new Date();
@@ -20,9 +21,11 @@ function getDaysLeft(expiresAt) {
 
 function RecipePage() {
   const zones = useFridgeStore((state) => state.zones);
+  const recipes = useRecipeStore((state) => state.recipes);
+  const errorMessage = useRecipeStore((state) => state.errorMessage);
+  const setRecipes = useRecipeStore((state) => state.setRecipes);
+  const setErrorMessage = useRecipeStore((state) => state.setErrorMessage);
   const [loading, setLoading] = useState(false);
-  const [recipes, setRecipes] = useState([]);
-  const [errorMessage, setErrorMessage] = useState("");
   const [prioritizeUrgent, setPrioritizeUrgent] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
 
