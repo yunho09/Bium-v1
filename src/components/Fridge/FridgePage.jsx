@@ -33,7 +33,7 @@ function FridgePage() {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState("right");
-  const [drawerOpen, setDrawerOpen] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingFood, setEditingFood] = useState(null);
   const [draggingFood, setDraggingFood] = useState(null);
 
@@ -233,7 +233,7 @@ function FridgePage() {
               </ArrowButton>
             </Pager>
 
-            <SlidingStage key={activeZone.id} $direction={direction}>
+            <SlidingStage $direction={direction}>
               <FridgeBoard
                 zone={activeZone}
                 leftDoorItems={zonesWithDaysLeft.leftDoor}
@@ -247,27 +247,30 @@ function FridgePage() {
             </DrawerTrigger>
           </MainArea>
 
-          <ShoppingPanel $open={drawerOpen}>
-            <DrawerHeader>
-              <h3>방금 장본 음식</h3>
-              <DrawerActions>
-                <AutoPlaceButton type="button" onClick={handleAutoPlaceShoppingBag}>
-                  자동 배치
-                </AutoPlaceButton>
-                <DrawerClose type="button" aria-label="장본 음식 패널 닫기" onClick={handleCloseDrawer}>
-                  <X size={22} />
-                </DrawerClose>
-              </DrawerActions>
-            </DrawerHeader>
-            <FridgeZone
-              containerId="shoppingBag"
-              icon="🛍️"
-              title="장본 음식"
-              subtitle="냉장고로 드래그해 배치하세요"
-              items={zonesWithDaysLeft.shoppingBag}
-              onClickFood={setEditingFood}
-            />
-          </ShoppingPanel>
+          {drawerOpen && (
+            <ShoppingPanel>
+              <DrawerHeader>
+                <h3>방금 장본 음식</h3>
+                <DrawerActions>
+                  <AutoPlaceButton type="button" onClick={handleAutoPlaceShoppingBag}>
+                    자동 배치
+                  </AutoPlaceButton>
+                  <DrawerClose type="button" aria-label="장본 음식 패널 닫기" onClick={handleCloseDrawer}>
+                    <X size={22} />
+                  </DrawerClose>
+                </DrawerActions>
+              </DrawerHeader>
+              <FridgeZone
+                containerId="shoppingBag"
+                icon="🛍️"
+                title="장본 음식"
+                subtitle="냉장고로 드래그해 배치하세요"
+                items={zonesWithDaysLeft.shoppingBag}
+                onClickFood={setEditingFood}
+                sortable={false}
+              />
+            </ShoppingPanel>
+          )}
         </FridgeLayout>
 
         <DragOverlay dropAnimation={{ duration: 180 }}>
@@ -396,13 +399,6 @@ const ShoppingPanel = styled.aside`
   padding: 20px;
   max-height: calc(100vh - 164px);
   overflow: auto;
-  display: ${(props) => (props.$open ? "block" : "none")};
-  transform: translateY(${(props) => (props.$open ? "0" : "12px")});
-  opacity: ${(props) => (props.$open ? 1 : 0)};
-  pointer-events: ${(props) => (props.$open ? "auto" : "none")};
-  transition:
-    transform 0.24s ease,
-    opacity 0.2s ease;
 
   @media (max-width: 1220px) {
     position: static;

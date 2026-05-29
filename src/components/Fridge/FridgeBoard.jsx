@@ -22,6 +22,7 @@ function DoorZone({ side, items, onClickFood }) {
           onClickFood={onClickFood}
           compact
           door
+          sortable={false}
         />
       </DoorSlotFrame>
     </Door>

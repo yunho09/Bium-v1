@@ -4,7 +4,7 @@
  */
 import { memo, useMemo } from "react";
 import styled from "@emotion/styled";
-import { useDroppable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import FoodItem from "./FoodItem";
@@ -38,7 +38,28 @@ function SortableFoodItem({ item, onClickFood, list, door }) {
 
 const MemoSortableFoodItem = memo(SortableFoodItem);
 
-function FridgeZone({ containerId, icon, title, subtitle, items, onClickFood, compact = false, door = false }) {
+function DraggableFoodItem({ item, onClickFood, list, door }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: item.id });
+
+  return (
+    <div ref={setNodeRef}>
+      <FoodItem
+        item={item}
+        onClick={() => onClickFood(item)}
+        daysLeft={item.daysLeft}
+        dragAttributes={attributes}
+        dragListeners={listeners}
+        isDragging={isDragging}
+        list={list}
+        door={door}
+      />
+    </div>
+  );
+}
+
+const MemoDraggableFoodItem = memo(DraggableFoodItem);
+
+function FridgeZone({ containerId, icon, title, subtitle, items, onClickFood, compact = false, door = false, sortable = true }) {
   const { isOver, setNodeRef } = useDroppable({ id: containerId });
   const list = containerId === "shoppingBag";
   const displayItems = useMemo(() => (list ? [...items].reverse() : items), [items, list]);
@@ -59,10 +80,24 @@ function FridgeZone({ containerId, icon, title, subtitle, items, onClickFood, co
         </ZoneHeader>
       )}
 
-      <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
+      {sortable ? (
+        <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
+          <ZoneGrid $compact={compact} $list={list} $door={door}>
+            {displayItems.map((item) => (
+              <MemoSortableFoodItem key={item.id} item={item} onClickFood={onClickFood} list={list} door={door} />
+            ))}
+            {doorPlaceholders.map((_, index) => (
+              <DoorSlot key={`door-slot-${index}`} $active={isOver}>
+                빈 칸
+              </DoorSlot>
+            ))}
+            {items.length === 0 && !door && <Empty $compact={compact}>여기로 재료를 끌어다 놓으세요</Empty>}
+          </ZoneGrid>
+        </SortableContext>
+      ) : (
         <ZoneGrid $compact={compact} $list={list} $door={door}>
           {displayItems.map((item) => (
-            <MemoSortableFoodItem key={item.id} item={item} onClickFood={onClickFood} list={list} door={door} />
+            <MemoDraggableFoodItem key={item.id} item={item} onClickFood={onClickFood} list={list} door={door} />
           ))}
           {doorPlaceholders.map((_, index) => (
             <DoorSlot key={`door-slot-${index}`} $active={isOver}>
@@ -71,7 +106,7 @@ function FridgeZone({ containerId, icon, title, subtitle, items, onClickFood, co
           ))}
           {items.length === 0 && !door && <Empty $compact={compact}>여기로 재료를 끌어다 놓으세요</Empty>}
         </ZoneGrid>
-      </SortableContext>
+      )}
     </ZoneWrap>
   );
 }
