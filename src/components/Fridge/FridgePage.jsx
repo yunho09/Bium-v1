@@ -2,7 +2,7 @@
  * 냉장고 화면의 메인 컨테이너다.
  * 구역 이동, 드래그 앤 드롭, 식재료 수정 모달을 한 곳에서 관리한다.
  */
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import styled from "@emotion/styled";
 import { keyframes } from "@emotion/react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -39,31 +39,45 @@ function FridgePage() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
+  const zonesWithDaysLeft = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTime = today.getTime();
+
+    return CONTAINER_IDS.reduce((acc, containerId) => {
+      acc[containerId] = zones[containerId].map((item) => ({
+        ...item,
+        daysLeft: Math.round((new Date(item.expiresAt).getTime() - todayTime) / (1000 * 60 * 60 * 24)),
+      }));
+      return acc;
+    }, {});
+  }, [zones]);
+
   const activeZoneId = zoneOrder[activeIndex];
   const activeZone = useMemo(() => {
     const meta = zoneMeta[activeZoneId];
     return {
       ...meta,
-      items: zones[activeZoneId],
+      items: zonesWithDaysLeft[activeZoneId],
     };
-  }, [activeZoneId, zones]);
+  }, [activeZoneId, zonesWithDaysLeft]);
 
-  const findContainerByItemId = (itemId, sourceZones) => {
+  const findContainerByItemId = useCallback((itemId, sourceZones) => {
     for (const containerId of CONTAINER_IDS) {
       if (sourceZones[containerId].some((item) => item.id === itemId)) return containerId;
     }
     return null;
-  };
+  }, []);
 
-  const findFoodById = (itemId) => {
+  const findFoodById = useCallback((itemId) => {
     for (const containerId of CONTAINER_IDS) {
-      const found = zones[containerId].find((item) => item.id === itemId);
+      const found = zonesWithDaysLeft[containerId].find((item) => item.id === itemId);
       if (found) return found;
     }
     return null;
-  };
+  }, [zonesWithDaysLeft]);
 
-  const movePage = (nextDirection) => {
+  const movePage = useCallback((nextDirection) => {
     setDirection(nextDirection);
     setActiveIndex((prev) => {
       if (nextDirection === "left") {
@@ -71,17 +85,17 @@ function FridgePage() {
       }
       return prev === zoneOrder.length - 1 ? 0 : prev + 1;
     });
-  };
+  }, []);
 
-  const handleDragStart = ({ active }) => {
+  const handleDragStart = useCallback(({ active }) => {
     setDraggingFood(findFoodById(String(active.id)));
-  };
+  }, [findFoodById]);
 
-  const handleDragCancel = () => {
+  const handleDragCancel = useCallback(() => {
     setDraggingFood(null);
-  };
+  }, []);
 
-  const handleDragEnd = ({ active, over }) => {
+  const handleDragEnd = useCallback(({ active, over }) => {
     setDraggingFood(null);
     if (!over) return;
 
@@ -132,14 +146,14 @@ function FridgePage() {
         [overContainer]: targetList,
       };
     });
-  };
+  }, [findContainerByItemId, setZones]);
 
-  const handleSaveFood = (foodInput) => {
+  const handleSaveFood = useCallback((foodInput) => {
     saveFood(foodInput);
     setEditingFood(null);
-  };
+  }, [saveFood]);
 
-  const getAutoZoneForFood = (food) => {
+  const getAutoZoneForFood = useCallback((food) => {
     const preset = DEFAULT_FOOD_PRESETS.find((item) => item.name === food.name);
     const daysLeft = Math.round(
       (new Date(food.expiresAt).getTime() - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24),
@@ -160,9 +174,9 @@ function FridgePage() {
     if (daysLeft <= 5) return "fridge";
     if (daysLeft > 20) return "freezer";
     return "pantry";
-  };
+  }, []);
 
-  const handleAutoPlaceShoppingBag = () => {
+  const handleAutoPlaceShoppingBag = useCallback(() => {
     setZones((prev) => {
       if (prev.shoppingBag.length === 0) return prev;
 
@@ -178,7 +192,19 @@ function FridgePage() {
 
       return nextZones;
     });
-  };
+  }, [getAutoZoneForFood, setZones]);
+
+  const handleToggleDrawer = useCallback(() => {
+    setDrawerOpen((prev) => !prev);
+  }, []);
+
+  const handleCloseDrawer = useCallback(() => {
+    setDrawerOpen(false);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setEditingFood(null);
+  }, []);
 
   return (
     <Wrapper>
@@ -210,13 +236,13 @@ function FridgePage() {
             <SlidingStage key={activeZone.id} $direction={direction}>
               <FridgeBoard
                 zone={activeZone}
-                leftDoorItems={zones.leftDoor}
-                rightDoorItems={zones.rightDoor}
+                leftDoorItems={zonesWithDaysLeft.leftDoor}
+                rightDoorItems={zonesWithDaysLeft.rightDoor}
                 onClickFood={setEditingFood}
               />
             </SlidingStage>
 
-            <DrawerTrigger type="button" onClick={() => setDrawerOpen((prev) => !prev)}>
+            <DrawerTrigger type="button" onClick={handleToggleDrawer}>
               방금 장본 음식 넣기
             </DrawerTrigger>
           </MainArea>
@@ -228,7 +254,7 @@ function FridgePage() {
                 <AutoPlaceButton type="button" onClick={handleAutoPlaceShoppingBag}>
                   자동 배치
                 </AutoPlaceButton>
-                <DrawerClose type="button" aria-label="장본 음식 패널 닫기" onClick={() => setDrawerOpen(false)}>
+                <DrawerClose type="button" aria-label="장본 음식 패널 닫기" onClick={handleCloseDrawer}>
                   <X size={22} />
                 </DrawerClose>
               </DrawerActions>
@@ -238,7 +264,7 @@ function FridgePage() {
               icon="🛍️"
               title="장본 음식"
               subtitle="냉장고로 드래그해 배치하세요"
-              items={zones.shoppingBag}
+              items={zonesWithDaysLeft.shoppingBag}
               onClickFood={setEditingFood}
             />
           </ShoppingPanel>
@@ -247,7 +273,7 @@ function FridgePage() {
         <DragOverlay dropAnimation={{ duration: 180 }}>
           {draggingFood ? (
             <OverlayCard>
-              <FoodItem item={draggingFood} preview />
+              <FoodItem item={draggingFood} daysLeft={draggingFood.daysLeft} preview />
             </OverlayCard>
           ) : null}
         </DragOverlay>
@@ -259,7 +285,7 @@ function FridgePage() {
         initialValue={editingFood}
         presets={presets}
         onAddPreset={addCustomPreset}
-        onClose={() => setEditingFood(null)}
+        onClose={handleCloseModal}
         onSave={handleSaveFood}
       />
     </Wrapper>

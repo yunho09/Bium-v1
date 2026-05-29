@@ -2,6 +2,7 @@
  * 냉장고 안에서 보이는 식재료 카드다.
  * 유통기한 상태에 따라 배지와 시각 효과를 달리 보여준다.
  */
+import { memo } from "react";
 import styled from "@emotion/styled";
 import { keyframes } from "@emotion/react";
 
@@ -13,8 +14,17 @@ function getDaysLeft(expiresAt) {
   return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function FoodItem({ item, onClick, dragAttributes, dragListeners, isDragging, list = false, door = false, preview = false }) {
-  const daysLeft = getDaysLeft(item.expiresAt);
+function FoodItem({
+  item,
+  onClick,
+  dragAttributes,
+  dragListeners,
+  isDragging,
+  list = false,
+  door = false,
+  preview = false,
+  daysLeft = getDaysLeft(item.expiresAt),
+}) {
   const isExpired = daysLeft < 0;
   const isUrgent = daysLeft >= 0 && daysLeft <= 3;
   const isSafe = daysLeft >= 7;
@@ -45,7 +55,7 @@ function FoodItem({ item, onClick, dragAttributes, dragListeners, isDragging, li
   );
 }
 
-export default FoodItem;
+export default memo(FoodItem);
 
 const sweatDrop = keyframes`
   0% { transform: translateY(-4px); opacity: 0; }

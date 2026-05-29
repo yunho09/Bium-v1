@@ -2,6 +2,7 @@
  * 각 보관 구역의 공통 드롭 영역이다.
  * 쇼핑백, 도어, 냉장/냉동/실온 구역을 같은 방식으로 렌더링한다.
  */
+import { memo, useMemo } from "react";
 import styled from "@emotion/styled";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
@@ -24,6 +25,7 @@ function SortableFoodItem({ item, onClickFood, list, door }) {
       <FoodItem
         item={item}
         onClick={() => onClickFood(item)}
+        daysLeft={item.daysLeft}
         dragAttributes={attributes}
         dragListeners={listeners}
         isDragging={isDragging}
@@ -34,11 +36,17 @@ function SortableFoodItem({ item, onClickFood, list, door }) {
   );
 }
 
+const MemoSortableFoodItem = memo(SortableFoodItem);
+
 function FridgeZone({ containerId, icon, title, subtitle, items, onClickFood, compact = false, door = false }) {
   const { isOver, setNodeRef } = useDroppable({ id: containerId });
   const list = containerId === "shoppingBag";
-  const displayItems = list ? [...items].reverse() : items;
-  const doorPlaceholders = door ? Array.from({ length: Math.max(DOOR_SLOT_COUNT - items.length, 0) }) : [];
+  const displayItems = useMemo(() => (list ? [...items].reverse() : items), [items, list]);
+  const sortableIds = useMemo(() => displayItems.map((item) => item.id), [displayItems]);
+  const doorPlaceholders = useMemo(
+    () => (door ? Array.from({ length: Math.max(DOOR_SLOT_COUNT - items.length, 0) }) : []),
+    [door, items.length],
+  );
 
   return (
     <ZoneWrap ref={setNodeRef} $active={isOver} $compact={compact} $door={door}>
@@ -51,10 +59,10 @@ function FridgeZone({ containerId, icon, title, subtitle, items, onClickFood, co
         </ZoneHeader>
       )}
 
-      <SortableContext items={displayItems.map((item) => item.id)} strategy={rectSortingStrategy}>
+      <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
         <ZoneGrid $compact={compact} $list={list} $door={door}>
           {displayItems.map((item) => (
-            <SortableFoodItem key={item.id} item={item} onClickFood={onClickFood} list={list} door={door} />
+            <MemoSortableFoodItem key={item.id} item={item} onClickFood={onClickFood} list={list} door={door} />
           ))}
           {doorPlaceholders.map((_, index) => (
             <DoorSlot key={`door-slot-${index}`} $active={isOver}>
@@ -68,7 +76,7 @@ function FridgeZone({ containerId, icon, title, subtitle, items, onClickFood, co
   );
 }
 
-export default FridgeZone;
+export default memo(FridgeZone);
 
 const ZoneWrap = styled.section`
   min-height: ${(props) => (props.$compact ? "100%" : "auto")};

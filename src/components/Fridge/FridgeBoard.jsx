@@ -2,6 +2,7 @@
  * 냉장고 본체와 양쪽 도어를 시각적으로 조립하는 보드다.
  * 현재 선택된 구역과 문 슬롯의 식재료를 한 화면에 배치한다.
  */
+import { memo } from "react";
 import styled from "@emotion/styled";
 import FridgeZone from "./FridgeZone";
 
@@ -27,11 +28,13 @@ function DoorZone({ side, items, onClickFood }) {
   );
 }
 
+const MemoDoorZone = memo(DoorZone);
+
 function FridgeBoard({ zone, leftDoorItems, rightDoorItems, onClickFood }) {
   return (
     <Stage>
       <FridgeShell>
-        <DoorZone side="left" items={leftDoorItems} onClickFood={onClickFood} />
+        <MemoDoorZone side="left" items={leftDoorItems} onClickFood={onClickFood} />
 
         <Cabinet>
           <BackPanel />
@@ -53,13 +56,13 @@ function FridgeBoard({ zone, leftDoorItems, rightDoorItems, onClickFood }) {
           </BottomBins>
         </Cabinet>
 
-        <DoorZone side="right" items={rightDoorItems} onClickFood={onClickFood} />
+        <MemoDoorZone side="right" items={rightDoorItems} onClickFood={onClickFood} />
       </FridgeShell>
     </Stage>
   );
 }
 
-export default FridgeBoard;
+export default memo(FridgeBoard);
 
 const Stage = styled.section`
   width: 100%;
