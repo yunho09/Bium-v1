@@ -8,6 +8,66 @@ const RECIPE_COVERS = [
   "linear-gradient(135deg, rgba(244,211,142,0.75) 0%, rgba(255,255,255,0.36) 48%, rgba(213,162,73,0.64) 100%), #eee2c8",
 ];
 
+const PRACTICAL_RECIPE_TERMS = [
+  "볶음",
+  "볶음밥",
+  "덮밥",
+  "비빔밥",
+  "죽",
+  "국",
+  "찌개",
+  "탕",
+  "조림",
+  "찜",
+  "구이",
+  "전",
+  "부침",
+  "무침",
+  "샐러드",
+  "토스트",
+  "샌드위치",
+  "오믈렛",
+  "파스타",
+  "수프",
+  "스프",
+  "라면",
+  "만두",
+];
+
+const ODD_RECIPE_TERMS = [
+  "스무디",
+  "주스",
+  "음료",
+  "칵테일",
+  "아이스크림",
+  "케이크",
+  "쿠키",
+  "잼",
+  "퓨전",
+  "실험",
+  "분자",
+  "디저트",
+];
+
+const BASIC_INGREDIENTS = [
+  "밥",
+  "물",
+  "소금",
+  "후추",
+  "설탕",
+  "식용유",
+  "참기름",
+  "간장",
+  "고추장",
+  "된장",
+  "다진 마늘",
+  "마늘",
+  "깨",
+  "식초",
+  "버터",
+  "밀가루",
+];
+
 function buildPrompt({ ingredients, prioritizeUrgent }) {
   const ingredientLines = ingredients
     .map((item) => {
@@ -24,6 +84,11 @@ function buildPrompt({ ingredients, prioritizeUrgent }) {
 - 유통기한이 지난 재료는 사용하지 마.
 - ${prioritizeUrgent ? "D-Day가 낮은 임박 재료를 우선 사용해." : "임박 재료 우선 조건은 약하게 반영해."}
 - 냉장고에 없는 특수 재료를 필수 재료로 만들지 마. 소금, 후추, 식용유, 물, 간장 같은 기본 양념은 사용 가능해.
+- 이상하거나 실험적인 조합은 만들지 마. 실제 자취생이 바로 먹을 만한 평범한 집밥 메뉴만 추천해.
+- 메뉴 유형은 볶음, 볶음밥, 덮밥, 국, 찌개, 조림, 찜, 구이, 전, 무침, 샐러드, 토스트, 샌드위치, 오믈렛, 파스타, 수프 중에서 골라.
+- 스무디, 주스, 디저트, 케이크, 아이스크림, 잼, 칵테일, 퓨전 요리는 만들지 마.
+- 과일은 단독 요리 재료로 억지 사용하지 말고, 어울릴 때만 샐러드나 토스트의 보조 재료로 써.
+- 요리명은 "두부 계란 볶음", "시금치 덮밥"처럼 자연스러운 실제 음식 이름으로 작성해.
 - 응답은 JSON만 반환해. 마크다운 코드블록은 쓰지 마.
 - recipes 배열 안에 정확히 4개의 레시피를 넣어.
 
@@ -79,12 +144,20 @@ function ensureArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
-function normalizeRecipe(recipe, index) {
+function isAvailableIngredient(name, availableIngredientNames) {
+  return availableIngredientNames.some((availableName) => name.includes(availableName) || availableName.includes(name));
+}
+
+function normalizeRecipe(recipe, index, availableIngredientNames) {
   const detailIngredients = ensureArray(recipe.detailIngredients).map((ingredient) => ({
     name: ingredient.name || "재료",
     amount: ingredient.amount || "적당량",
-    status: ingredient.status || "냉장고 보유",
-    required: Boolean(ingredient.required),
+    status:
+      ingredient.status ||
+      (isAvailableIngredient(ingredient.name || "", availableIngredientNames) ? "냉장고 보유" : "기본 양념 또는 선택 재료"),
+    required:
+      Boolean(ingredient.required) &&
+      (isAvailableIngredient(ingredient.name || "", availableIngredientNames) || BASIC_INGREDIENTS.includes(ingredient.name)),
   }));
   const fallbackIngredients = detailIngredients.map((ingredient) => ingredient.name).filter(Boolean);
   const fallbackMatches = fallbackIngredients.slice(0, 6);
@@ -115,6 +188,15 @@ function normalizeRecipe(recipe, index) {
   };
 }
 
+function isPracticalRecipe(recipe, availableIngredientNames) {
+  const recipeText = [recipe.name, recipe.summary, ...recipe.ingredients, ...recipe.fridgeMatches].join(" ");
+  const hasOddTerm = ODD_RECIPE_TERMS.some((term) => recipeText.includes(term));
+  const hasPracticalTerm = PRACTICAL_RECIPE_TERMS.some((term) => recipe.name.includes(term));
+  const usesFridgeIngredient = availableIngredientNames.some((name) => recipeText.includes(name));
+
+  return !hasOddTerm && hasPracticalTerm && usesFridgeIngredient;
+}
+
 export async function generateRecipes({ ingredients, prioritizeUrgent }) {
   if (!GEMINI_API_KEY) {
     throw new Error(".env.local에 VITE_GEMINI_API_KEY를 설정해 주세요.");
@@ -135,7 +217,7 @@ export async function generateRecipes({ ingredients, prioritizeUrgent }) {
           },
         ],
         generationConfig: {
-          temperature: 0.7,
+          temperature: 0.35,
           responseMimeType: "application/json",
         },
       }),
@@ -150,7 +232,12 @@ export async function generateRecipes({ ingredients, prioritizeUrgent }) {
 
   const data = await response.json();
   const parsed = parseJsonText(extractResponseText(data));
-  const recipes = ensureArray(parsed.recipes).map(normalizeRecipe).filter((recipe) => recipe.steps.length > 0);
+  const availableIngredientNames = ingredients
+    .filter((ingredient) => ingredient.daysLeft >= 0)
+    .map((ingredient) => ingredient.name);
+  const recipes = ensureArray(parsed.recipes)
+    .map((recipe, index) => normalizeRecipe(recipe, index, availableIngredientNames))
+    .filter((recipe) => recipe.steps.length > 0 && isPracticalRecipe(recipe, availableIngredientNames));
 
   if (recipes.length === 0) {
     throw new Error("추천할 수 있는 레시피를 받지 못했습니다.");
