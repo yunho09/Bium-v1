@@ -7,7 +7,7 @@ import styled from "@emotion/styled";
 import RecipeCard from "./RecipeCard";
 import RecipeDetailPage from "./RecipeDetailPage";
 import SkeletonCard from "./SkeletonCard";
-import { recipeMockData } from "./recipeMockData";
+import { generateRecipes } from "../../api/generateRecipes";
 import { useFridgeStore } from "../../store/useFridgeStore";
 
 function getDaysLeft(expiresAt) {
@@ -21,32 +21,41 @@ function getDaysLeft(expiresAt) {
 function RecipePage() {
   const zones = useFridgeStore((state) => state.zones);
   const [loading, setLoading] = useState(false);
-  const [recipes, setRecipes] = useState(recipeMockData);
+  const [recipes, setRecipes] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
   const [prioritizeUrgent, setPrioritizeUrgent] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
 
   const skeletonCount = useMemo(() => Array.from({ length: 4 }), []);
-  const urgentItems = useMemo(() => {
-    return Object.values(zones)
-      .flat()
-      .map((item) => ({ ...item, daysLeft: getDaysLeft(item.expiresAt) }))
-      .filter((item) => item.daysLeft >= 0 && item.daysLeft <= 5)
-      .sort((a, b) => a.daysLeft - b.daysLeft)
-      .slice(0, 5);
+  const fridgeItems = useMemo(() => {
+    return Object.entries(zones)
+      .flatMap(([zoneKey, items]) => items.map((item) => ({ ...item, zoneKey, daysLeft: getDaysLeft(item.expiresAt) })))
+      .sort((a, b) => a.daysLeft - b.daysLeft);
   }, [zones]);
 
-  const handleGenerate = () => {
-    // 예시 데이터로 추천 목록을 다시 그리되, 임박 재료 우선 여부에 따라 순서를 바꾼다.
-    setLoading(true);
-    setRecipes([]);
+  const urgentItems = useMemo(() => {
+    return fridgeItems
+      .filter((item) => item.daysLeft >= 0 && item.daysLeft <= 5)
+      .slice(0, 5);
+  }, [fridgeItems]);
 
-    setTimeout(() => {
-      const list = prioritizeUrgent
-        ? [recipeMockData[0], recipeMockData[1], recipeMockData[2], recipeMockData[3]]
-        : recipeMockData;
-      setRecipes(list);
+  const handleGenerate = async () => {
+    setLoading(true);
+    setErrorMessage("");
+    setRecipes([]);
+    setSelectedRecipe(null);
+
+    try {
+      const nextRecipes = await generateRecipes({
+        ingredients: fridgeItems,
+        prioritizeUrgent,
+      });
+      setRecipes(nextRecipes);
+    } catch (error) {
+      setErrorMessage(error.message || "AI 추천을 불러오지 못했습니다.");
+    } finally {
       setLoading(false);
-    }, 900);
+    }
   };
 
   if (selectedRecipe) {
@@ -71,7 +80,19 @@ function RecipePage() {
       <ContentGrid>
         <RecipeGrid>
           {loading && skeletonCount.map((_, index) => <SkeletonCard key={`s-${index}`} />)}
-          {!loading &&
+          {!loading && errorMessage && (
+            <StatusBox role="alert">
+              <strong>AI 추천을 불러오지 못했어요.</strong>
+              <p>{errorMessage}</p>
+            </StatusBox>
+          )}
+          {!loading && !errorMessage && recipes.length === 0 && (
+            <StatusBox>
+              <strong>아직 생성된 레시피가 없어요.</strong>
+              <p>냉장고 재료를 바탕으로 Gemini AI가 바로 만들 수 있는 레시피를 추천합니다.</p>
+            </StatusBox>
+          )}
+          {!loading && !errorMessage &&
             recipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} onSelect={setSelectedRecipe} />)}
         </RecipeGrid>
 
@@ -87,8 +108,8 @@ function RecipePage() {
             ))}
             {urgentItems.length === 0 && <Empty>임박 재료가 없습니다</Empty>}
           </UrgentList>
-          <GenerateButton type="button" onClick={handleGenerate}>
-            추천 다시 생성
+          <GenerateButton type="button" onClick={handleGenerate} disabled={loading}>
+            {loading ? "추천 생성 중" : "AI 추천 생성"}
           </GenerateButton>
         </UrgentBox>
       </ContentGrid>
@@ -192,6 +213,31 @@ const RecipeGrid = styled.div`
   }
 `;
 
+const StatusBox = styled.div`
+  min-height: 220px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 28px;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  grid-column: 1 / -1;
+  color: var(--text);
+
+  strong {
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  p {
+    max-width: 540px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--text);
+  }
+`;
+
 const UrgentBox = styled.aside`
   border-radius: 24px;
   border: 0;
@@ -250,4 +296,9 @@ const GenerateButton = styled.button`
   font-size: 16px;
   font-weight: 480;
   cursor: pointer;
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.62;
+  }
 `;
