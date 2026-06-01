@@ -4,7 +4,7 @@
  */
 import { useMemo, useState } from "react";
 import styled from "@emotion/styled";
-import { Plus, Search, Settings, ShoppingBag, Trash2 } from "lucide-react";
+import { CalendarDays, Plus, Search, Settings, ShoppingBag, Trash2 } from "lucide-react";
 import { useFridgeStore } from "../../store/useFridgeStore";
 
 const categories = [
@@ -23,16 +23,23 @@ function FoodLibraryPage() {
   const addPresetToShoppingBag = useFridgeStore((state) => state.addPresetToShoppingBag);
   const addCustomPreset = useFridgeStore((state) => state.addCustomPreset);
   const removeFood = useFridgeStore((state) => state.removeFood);
+  const updateFoodExpiresAt = useFridgeStore((state) => state.updateFoodExpiresAt);
 
   const [editingPresetId, setEditingPresetId] = useState("");
+  const [editingBagFoodId, setEditingBagFoodId] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const [creatorOpen, setCreatorOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
+  const [editBagExpiresAt, setEditBagExpiresAt] = useState("");
 
   const selectedPreset = useMemo(
     () => presets.find((preset) => preset.id === editingPresetId),
     [editingPresetId, presets],
+  );
+  const selectedBagFood = useMemo(
+    () => zones.shoppingBag.find((item) => item.id === editingBagFoodId),
+    [editingBagFoodId, zones.shoppingBag],
   );
 
   const filteredPresets = useMemo(() => {
@@ -86,6 +93,24 @@ function FoodLibraryPage() {
     setNewIcon("🥕");
     setNewDays(7);
     setNewCategory("vegetable");
+  };
+
+  const openBagDateEditor = (item) => {
+    setEditingBagFoodId(item.id);
+    setEditBagExpiresAt(item.expiresAt);
+  };
+
+  const closeBagDateEditor = () => {
+    setEditingBagFoodId("");
+    setEditBagExpiresAt("");
+  };
+
+  const saveBagDate = (event) => {
+    event.preventDefault();
+    if (!selectedBagFood || !editBagExpiresAt) return;
+
+    updateFoodExpiresAt(selectedBagFood.id, editBagExpiresAt);
+    closeBagDateEditor();
   };
 
   return (
@@ -165,6 +190,13 @@ function FoodLibraryPage() {
                   <span>{item.icon}</span>
                   <strong>{item.name}</strong>
                   <BagDate>{item.expiresAt}</BagDate>
+                  <BagEditButton
+                    type="button"
+                    aria-label={`${item.name} 유통기한 수정`}
+                    onClick={() => openBagDateEditor(item)}
+                  >
+                    <CalendarDays size={14} />
+                  </BagEditButton>
                   <BagRemoveButton
                     type="button"
                     aria-label={`${item.name} 쇼핑백에서 삭제`}
@@ -190,6 +222,33 @@ function FoodLibraryPage() {
               </Label>
               <Actions>
                 <Button type="button" onClick={closeEditor}>
+                  닫기
+                </Button>
+                <Button type="submit" $primary>
+                  저장
+                </Button>
+              </Actions>
+            </Form>
+          </ModalCard>
+        </ModalBackdrop>
+      )}
+
+      {editingBagFoodId && selectedBagFood && (
+        <ModalBackdrop>
+          <ModalCard>
+            <h3>{selectedBagFood.name} 유통기한 수정</h3>
+            <Form onSubmit={saveBagDate}>
+              <Label>
+                유통기한
+                <Input
+                  type="date"
+                  value={editBagExpiresAt}
+                  onChange={(event) => setEditBagExpiresAt(event.target.value)}
+                  required
+                />
+              </Label>
+              <Actions>
+                <Button type="button" onClick={closeBagDateEditor}>
                   닫기
                 </Button>
                 <Button type="submit" $primary>
@@ -390,7 +449,7 @@ const BagItem = styled.li`
   background: var(--surface);
   border: 1px solid rgba(0, 0, 0, 0.08);
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) 32px;
+  grid-template-columns: 28px minmax(0, 1fr) 32px 32px;
   align-items: center;
   column-gap: 8px;
   padding: 8px 10px;
@@ -414,7 +473,7 @@ const BagDate = styled.em`
   font-weight: 330;
 `;
 
-const BagRemoveButton = styled.button`
+const BagEditButton = styled.button`
   grid-column: 3;
   grid-row: 1 / span 2;
   width: 32px;
@@ -430,6 +489,10 @@ const BagRemoveButton = styled.button`
   &:hover {
     background: var(--block-lilac);
   }
+`;
+
+const BagRemoveButton = styled(BagEditButton)`
+  grid-column: 4;
 `;
 
 const BagEmpty = styled.p`

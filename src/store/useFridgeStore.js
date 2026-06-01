@@ -142,6 +142,15 @@ export const useFridgeStore = create(
       }));
     },
 
+    updateFoodExpiresAt: (foodId, expiresAt) => {
+      set((state) => ({
+        zones: CONTAINER_IDS.reduce((acc, key) => {
+          acc[key] = state.zones[key].map((item) => (item.id === foodId ? { ...item, expiresAt } : item));
+          return acc;
+        }, {}),
+      }));
+    },
+
     addCustomPreset: ({ name, icon, shelfLifeDays, category = "etc" }) => {
       const customPreset = {
         id: makeId("preset"),
