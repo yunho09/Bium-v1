@@ -133,6 +133,15 @@ export const useFridgeStore = create(
       });
     },
 
+    removeFood: (foodId) => {
+      set((state) => ({
+        zones: CONTAINER_IDS.reduce((acc, key) => {
+          acc[key] = state.zones[key].filter((item) => item.id !== foodId);
+          return acc;
+        }, {}),
+      }));
+    },
+
     addCustomPreset: ({ name, icon, shelfLifeDays, category = "etc" }) => {
       const customPreset = {
         id: makeId("preset"),
