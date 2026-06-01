@@ -176,6 +176,21 @@ export const useFridgeStore = create(
       }));
     },
 
+    updatePresetDetails: (presetId, presetInput) => {
+      set((state) => ({
+        presets: state.presets.map((preset) =>
+          preset.id === presetId
+            ? {
+                ...preset,
+                name: presetInput.name,
+                icon: presetInput.icon,
+                shelfLifeDays: Number(presetInput.shelfLifeDays),
+              }
+            : preset,
+        ),
+      }));
+    },
+
     addPresetToShoppingBag: (presetId) => {
       const preset = get().presets.find((item) => item.id === presetId);
       if (!preset) return;
