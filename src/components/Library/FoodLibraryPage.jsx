@@ -4,7 +4,7 @@
  */
 import { useMemo, useState } from "react";
 import styled from "@emotion/styled";
-import { Plus, Search, Settings, ShoppingBag } from "lucide-react";
+import { Plus, Search, Settings, ShoppingBag, Trash2 } from "lucide-react";
 import { useFridgeStore } from "../../store/useFridgeStore";
 
 const categories = [
@@ -22,6 +22,7 @@ function FoodLibraryPage() {
   const updatePresetShelfLife = useFridgeStore((state) => state.updatePresetShelfLife);
   const addPresetToShoppingBag = useFridgeStore((state) => state.addPresetToShoppingBag);
   const addCustomPreset = useFridgeStore((state) => state.addCustomPreset);
+  const removeFood = useFridgeStore((state) => state.removeFood);
 
   const [editingPresetId, setEditingPresetId] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
@@ -164,6 +165,13 @@ function FoodLibraryPage() {
                   <span>{item.icon}</span>
                   <strong>{item.name}</strong>
                   <BagDate>{item.expiresAt}</BagDate>
+                  <BagRemoveButton
+                    type="button"
+                    aria-label={`${item.name} 쇼핑백에서 삭제`}
+                    onClick={() => removeFood(item.id)}
+                  >
+                    <Trash2 size={14} />
+                  </BagRemoveButton>
                 </BagItem>
               ))}
             </BagList>
@@ -382,7 +390,7 @@ const BagItem = styled.li`
   background: var(--surface);
   border: 1px solid rgba(0, 0, 0, 0.08);
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-columns: 28px minmax(0, 1fr) 32px;
   align-items: center;
   column-gap: 8px;
   padding: 8px 10px;
@@ -404,6 +412,24 @@ const BagDate = styled.em`
   font-size: 12px;
   font-style: normal;
   font-weight: 330;
+`;
+
+const BagRemoveButton = styled.button`
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--block-lilac);
+  }
 `;
 
 const BagEmpty = styled.p`
