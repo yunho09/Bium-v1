@@ -19,7 +19,7 @@ const categories = [
 function FoodLibraryPage() {
   const zones = useFridgeStore((state) => state.zones);
   const presets = useFridgeStore((state) => state.presets);
-  const updatePresetShelfLife = useFridgeStore((state) => state.updatePresetShelfLife);
+  const updatePresetDetails = useFridgeStore((state) => state.updatePresetDetails);
   const addPresetToShoppingBag = useFridgeStore((state) => state.addPresetToShoppingBag);
   const addCustomPreset = useFridgeStore((state) => state.addCustomPreset);
   const removeFood = useFridgeStore((state) => state.removeFood);
@@ -51,6 +51,8 @@ function FoodLibraryPage() {
     });
   }, [category, presets, query]);
 
+  const [editName, setEditName] = useState("");
+  const [editIcon, setEditIcon] = useState("🥕");
   const [editDays, setEditDays] = useState(selectedPreset?.shelfLifeDays || 7);
   const [newName, setNewName] = useState("");
   const [newIcon, setNewIcon] = useState("🥕");
@@ -59,6 +61,8 @@ function FoodLibraryPage() {
 
   const openEditor = (preset) => {
     setEditingPresetId(preset.id);
+    setEditName(preset.name);
+    setEditIcon(preset.icon);
     setEditDays(preset.shelfLifeDays);
     setEditorOpen(true);
   };
@@ -66,13 +70,19 @@ function FoodLibraryPage() {
   const closeEditor = () => {
     setEditorOpen(false);
     setEditingPresetId("");
+    setEditName("");
+    setEditIcon("🥕");
   };
 
-  const saveDays = (event) => {
+  const savePresetDetails = (event) => {
     event.preventDefault();
-    if (!selectedPreset) return;
-    // 선택한 프리셋의 기본 보관 기간만 갱신한다.
-    updatePresetShelfLife(selectedPreset.id, Number(editDays));
+    if (!selectedPreset || !editName.trim()) return;
+
+    updatePresetDetails(selectedPreset.id, {
+      name: editName.trim(),
+      icon: editIcon || "🥕",
+      shelfLifeDays: Number(editDays),
+    });
     closeEditor();
   };
 
@@ -144,7 +154,7 @@ function FoodLibraryPage() {
                   <Icon>{preset.icon}</Icon>
                   <SettingsButton
                     type="button"
-                    aria-label={`${preset.name} 유통기한 설정`}
+                    aria-label={`${preset.name} 정보 설정`}
                     onClick={(event) => {
                       event.stopPropagation();
                       openEditor(preset);
@@ -214,8 +224,16 @@ function FoodLibraryPage() {
       {editorOpen && selectedPreset && (
         <ModalBackdrop>
           <ModalCard>
-            <h3>{selectedPreset.name} 기본 유통기한 수정</h3>
-            <Form onSubmit={saveDays}>
+            <h3>{selectedPreset.name} 정보 수정</h3>
+            <Form onSubmit={savePresetDetails}>
+              <Label>
+                이름
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} required />
+              </Label>
+              <Label>
+                아이콘
+                <Input value={editIcon} onChange={(e) => setEditIcon(e.target.value)} maxLength={2} />
+              </Label>
               <Label>
                 기본 유통기한(일)
                 <Input type="number" min={1} value={editDays} onChange={(e) => setEditDays(e.target.value)} />
