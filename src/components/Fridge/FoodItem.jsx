@@ -14,6 +14,14 @@ function getDaysLeft(expiresAt) {
   return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function getFreshness(daysLeft) {
+  if (daysLeft < 0) return "expired";
+  if (daysLeft === 0) return "today";
+  if (daysLeft <= 3) return "urgent";
+  if (daysLeft <= 6) return "soon";
+  return "safe";
+}
+
 function FoodItem({
   item,
   onClick,
@@ -26,15 +34,15 @@ function FoodItem({
   daysLeft = getDaysLeft(item.expiresAt),
 }) {
   const isExpired = daysLeft < 0;
-  const isUrgent = daysLeft >= 0 && daysLeft <= 3;
-  const isSafe = daysLeft >= 7;
+  const freshness = getFreshness(daysLeft);
   const badgeText = isExpired ? `만료 ${Math.abs(daysLeft)}일` : daysLeft === 0 ? "오늘" : `D-${daysLeft}`;
+  const isWarning = freshness === "today" || freshness === "urgent";
 
   return (
     <ItemCard
       type="button"
       onClick={onClick}
-      $expired={isExpired}
+      $freshness={freshness}
       $dragging={isDragging}
       $list={list}
       $door={door}
@@ -42,14 +50,14 @@ function FoodItem({
       {...dragAttributes}
       {...dragListeners}
     >
-      <Badge $expired={isExpired} $urgent={isUrgent} $safe={isSafe} $door={door}>
+      <Badge $freshness={freshness} $door={door}>
         {badgeText}
       </Badge>
-      <IconEmoji $expired={isExpired} $list={list} $door={door}>
+      <IconEmoji $freshness={freshness} $list={list} $door={door}>
         {item.icon || "🥕"}
       </IconEmoji>
       <Name $list={list} $door={door}>{item.name}</Name>
-      <Sweat $urgent={isUrgent && !isExpired} />
+      <Sweat $active={isWarning} />
     </ItemCard>
   );
 }
@@ -69,14 +77,72 @@ const shake = keyframes`
   75% { transform: translateX(-1px) rotate(-2deg); }
 `;
 
+const dangerPulse = keyframes`
+  0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+  50% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16); }
+`;
+
+const urgentWiggle = keyframes`
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  35% { transform: rotate(-8deg) scale(1.08); }
+  70% { transform: rotate(8deg) scale(1.08); }
+`;
+
+const soonBounce = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+`;
+
+const safeFloat = keyframes`
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-4px) rotate(3deg); }
+`;
+
+const badgeBlink = keyframes`
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+`;
+
+const cardBorderByFreshness = {
+  expired: "#cfd3d0",
+  today: "#f1a7a7",
+  urgent: "#f1a7a7",
+  soon: "#e6c46d",
+  safe: "#b8dcc4",
+};
+
+const cardBackgroundByFreshness = {
+  expired: "#eff1ef",
+  today: "#fff6f4",
+  urgent: "#fff6f4",
+  soon: "#fffaf0",
+  safe: "#f7fff8",
+};
+
+const badgeBackgroundByFreshness = {
+  expired: "#6b7280",
+  today: "#ef4444",
+  urgent: "#ef4444",
+  soon: "#d9951e",
+  safe: "#45bd75",
+};
+
+const getIconAnimation = (freshness) => {
+  if (freshness === "expired") return `${shake} 0.8s infinite`;
+  if (freshness === "today") return `${urgentWiggle} 0.7s infinite`;
+  if (freshness === "urgent") return `${urgentWiggle} 1s infinite`;
+  if (freshness === "soon") return `${soonBounce} 1.5s infinite`;
+  return `${safeFloat} 2.8s infinite`;
+};
+
 const ItemCard = styled.button`
   position: relative;
   width: 100%;
   aspect-ratio: ${(props) => (props.$list || props.$door ? "auto" : "1 / 0.86")};
   min-height: ${(props) => (props.$list ? "44px" : props.$door ? "52px" : "64px")};
-  border: 1px solid ${(props) => (props.$expired ? "#cfd3d0" : "#dfe7df")};
+  border: 1px solid ${(props) => cardBorderByFreshness[props.$freshness] || "#dfe7df"};
   border-radius: 10px;
-  background: ${(props) => (props.$expired ? "#eff1ef" : "#ffffff")};
+  background: ${(props) => cardBackgroundByFreshness[props.$freshness] || "#ffffff"};
   box-shadow: ${(props) =>
     props.$preview
       ? "0 18px 34px rgba(31, 40, 34, 0.28)"
@@ -97,6 +163,8 @@ const ItemCard = styled.button`
   transform: ${(props) => (props.$preview ? "scale(1.04)" : "scale(1)")};
   opacity: ${(props) => (props.$dragging ? 0.35 : 1)};
   pointer-events: ${(props) => (props.$preview ? "none" : "auto")};
+  animation: ${(props) =>
+    props.$freshness === "today" || props.$freshness === "urgent" ? dangerPulse : "none"} 1.35s infinite;
 
   &:active {
     cursor: grabbing;
@@ -108,10 +176,13 @@ const ItemCard = styled.button`
 `;
 
 const IconEmoji = styled.span`
+  display: inline-block;
   font-size: ${(props) => (props.$list ? "23px" : props.$door ? "21px" : "28px")};
   line-height: 1;
-  filter: ${(props) => (props.$expired ? "grayscale(1)" : "none")};
-  animation: ${(props) => (props.$expired ? shake : "none")} 0.8s infinite;
+  filter: ${(props) => (props.$freshness === "expired" ? "grayscale(1)" : "none")};
+  transform-origin: center;
+  will-change: transform;
+  animation: ${(props) => getIconAnimation(props.$freshness)};
 `;
 
 const Name = styled.strong`
@@ -128,6 +199,9 @@ const Name = styled.strong`
 
 const Badge = styled.span`
   position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   top: ${(props) => (props.$door ? "4px" : "5px")};
   right: ${(props) => (props.$door ? "4px" : "5px")};
   border-radius: 999px;
@@ -136,12 +210,12 @@ const Badge = styled.span`
   font-weight: 900;
   line-height: 1.2;
   color: #fff;
-  background: ${(props) => {
-    if (props.$expired) return "#6b7280";
-    if (props.$urgent) return "#3f91d8";
-    if (props.$safe) return "#45bd75";
-    return "#66a8dd";
-  }};
+  background: ${(props) => badgeBackgroundByFreshness[props.$freshness] || "#66a8dd"};
+  transform-origin: center;
+  animation: ${(props) =>
+    props.$freshness === "today" || props.$freshness === "urgent" || props.$freshness === "soon"
+      ? badgeBlink
+      : "none"} 0.8s infinite;
 `;
 
 const Sweat = styled.span`
@@ -151,7 +225,7 @@ const Sweat = styled.span`
   width: 8px;
   height: 12px;
   border-radius: 60% 60% 70% 70%;
-  background: #48b7e8;
-  opacity: ${(props) => (props.$urgent ? 1 : 0)};
-  animation: ${(props) => (props.$urgent ? sweatDrop : "none")} 0.9s infinite;
+  background: #ef4444;
+  opacity: ${(props) => (props.$active ? 1 : 0)};
+  animation: ${(props) => (props.$active ? sweatDrop : "none")} 0.9s infinite;
 `;
