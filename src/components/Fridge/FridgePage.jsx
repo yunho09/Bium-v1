@@ -61,6 +61,13 @@ function FridgePage() {
     };
   }, [activeZoneId, zonesWithDaysLeft]);
 
+  const expiredFoodCount = useMemo(() => {
+    return CONTAINER_IDS.reduce(
+      (total, containerId) => total + zonesWithDaysLeft[containerId].filter((item) => item.daysLeft < 0).length,
+      0,
+    );
+  }, [zonesWithDaysLeft]);
+
   const findContainerByItemId = useCallback((itemId, sourceZones) => {
     for (const containerId of CONTAINER_IDS) {
       if (sourceZones[containerId].some((item) => item.id === itemId)) return containerId;
@@ -206,6 +213,27 @@ function FridgePage() {
     });
   }, [getAutoZoneForFood, setZones]);
 
+  const handleRemoveExpiredFoods = useCallback(() => {
+    if (expiredFoodCount === 0) return;
+    if (!window.confirm(`유통기한이 지난 음식 ${expiredFoodCount}개를 삭제할까요?`)) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTime = today.getTime();
+
+    setZones((prev) =>
+      CONTAINER_IDS.reduce((acc, containerId) => {
+        acc[containerId] = prev[containerId].filter((item) => {
+          const expiresAt = new Date(item.expiresAt);
+          expiresAt.setHours(0, 0, 0, 0);
+          return expiresAt.getTime() >= todayTime;
+        });
+        return acc;
+      }, {}),
+    );
+    setEditingFood(null);
+  }, [expiredFoodCount, setZones]);
+
   const handleToggleDrawer = useCallback(() => {
     setDrawerOpen((prev) => !prev);
   }, []);
@@ -253,6 +281,11 @@ function FridgePage() {
             <DrawerTrigger type="button" onClick={handleToggleDrawer}>
               방금 장본 음식 넣기
             </DrawerTrigger>
+
+            <ExpiredDeleteButton type="button" onClick={handleRemoveExpiredFoods} disabled={expiredFoodCount === 0}>
+              유통기한 지난 음식 삭제
+              <span>{expiredFoodCount}</span>
+            </ExpiredDeleteButton>
           </MainArea>
 
           {drawerOpen && (
@@ -392,6 +425,37 @@ const DrawerTrigger = styled.button`
   font-weight: 480;
   cursor: pointer;
   transform: translateY(-12px);
+`;
+
+const ExpiredDeleteButton = styled.button`
+  min-height: 40px;
+  border: 0;
+  background: #f1e4e1;
+  color: var(--text);
+  border-radius: 50px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateY(-10px);
+
+  span {
+    min-width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--surface);
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.45;
+  }
 `;
 
 const ShoppingPanel = styled.aside`
