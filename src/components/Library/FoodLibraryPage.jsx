@@ -22,6 +22,7 @@ function FoodLibraryPage() {
   const updatePresetDetails = useFridgeStore((state) => state.updatePresetDetails);
   const addPresetToShoppingBag = useFridgeStore((state) => state.addPresetToShoppingBag);
   const addCustomPreset = useFridgeStore((state) => state.addCustomPreset);
+  const removePreset = useFridgeStore((state) => state.removePreset);
   const removeFood = useFridgeStore((state) => state.removeFood);
   const updateFoodExpiresAt = useFridgeStore((state) => state.updateFoodExpiresAt);
 
@@ -84,6 +85,15 @@ function FoodLibraryPage() {
       shelfLifeDays: Number(editDays),
     });
     closeEditor();
+  };
+
+  const deletePreset = (preset) => {
+    if (!window.confirm(`${preset.name}을(를) 도감에서 삭제할까요?`)) return;
+
+    removePreset(preset.id);
+    if (editingPresetId === preset.id) {
+      closeEditor();
+    }
   };
 
   const createPreset = (event) => {
@@ -152,16 +162,28 @@ function FoodLibraryPage() {
               <Card key={preset.id} $active={editorOpen && selectedPreset?.id === preset.id}>
                 <CardTop>
                   <Icon>{preset.icon}</Icon>
-                  <SettingsButton
-                    type="button"
-                    aria-label={`${preset.name} 정보 설정`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      openEditor(preset);
-                    }}
-                  >
-                    <Settings size={16} />
-                  </SettingsButton>
+                  <CardActions>
+                    <SettingsButton
+                      type="button"
+                      aria-label={`${preset.name} 정보 설정`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openEditor(preset);
+                      }}
+                    >
+                      <Settings size={16} />
+                    </SettingsButton>
+                    <DeletePresetButton
+                      type="button"
+                      aria-label={`${preset.name} 도감에서 삭제`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        deletePreset(preset);
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </DeletePresetButton>
+                  </CardActions>
                 </CardTop>
                 <Name>{preset.name}</Name>
                 <AddToBag
@@ -548,6 +570,12 @@ const CardTop = styled.div`
   align-items: flex-start;
 `;
 
+const CardActions = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+`;
+
 const Icon = styled.span`
   font-size: 28px;
   line-height: 1;
@@ -566,6 +594,12 @@ const SettingsButton = styled.button`
 
   &:hover {
     background: var(--block-lilac);
+  }
+`;
+
+const DeletePresetButton = styled(SettingsButton)`
+  &:hover {
+    background: #f1e4e1;
   }
 `;
 
