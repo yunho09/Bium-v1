@@ -261,7 +261,7 @@ function FridgePage() {
               <ArrowButton type="button" aria-label="이전" onClick={() => movePage("left")}>
                 <ChevronLeft size={28} />
               </ArrowButton>
-              <ZoneTitle>
+              <ZoneTitle $zone={activeZoneId}>
                 <strong>{activeZone.title}</strong>
               </ZoneTitle>
               <ArrowButton type="button" aria-label="다음" onClick={() => movePage("right")}>
@@ -401,6 +401,24 @@ const ZoneTitle = styled.div`
   color: var(--text);
 
   strong {
+    min-width: 110px;
+    min-height: 34px;
+    border-radius: 999px;
+    border: ${(props) => {
+      if (props.$zone === "fridge") return "1px solid #9fb0a4";
+      if (props.$zone === "freezer") return "1px solid #95bfd5";
+      if (props.$zone === "pantry") return "1px solid #bf9255";
+      return "1px solid var(--border)";
+    }};
+    background: ${(props) => {
+      if (props.$zone === "fridge") return "#eff6f1";
+      if (props.$zone === "freezer") return "#e8f7ff";
+      if (props.$zone === "pantry") return "#fff1d8";
+      return "var(--surface)";
+    }};
+    display: inline-grid;
+    place-items: center;
+    padding: 0 16px;
     font-size: clamp(24px, 3vw, 32px);
     font-weight: 540;
     letter-spacing: -0.26px;

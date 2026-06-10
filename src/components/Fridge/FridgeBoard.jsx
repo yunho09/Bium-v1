@@ -38,7 +38,6 @@ function FridgeBoard({ zone, leftDoorItems, rightDoorItems, onClickFood }) {
         <MemoDoorZone side="left" zoneType={zone.id} items={leftDoorItems} onClickFood={onClickFood} />
 
         <Cabinet $zone={zone.id}>
-          {zone.id !== "fridge" && <ZoneBadge $zone={zone.id}>{zone.title}</ZoneBadge>}
           <BackPanel $zone={zone.id} />
           <Shelf $zone={zone.id} $top="150px" />
           <Shelf $zone={zone.id} $top="270px" />
@@ -241,24 +240,6 @@ const Cabinet = styled.section`
     border-width: 7px;
     padding: 24px 14px 64px;
   }
-`;
-
-const ZoneBadge = styled.div`
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  z-index: 3;
-  transform: translateX(-50%);
-  min-width: 86px;
-  height: 30px;
-  border-radius: 999px;
-  background: ${(props) => getTheme(props.$zone).badge};
-  border: 1px solid ${(props) => getTheme(props.$zone).badgeBorder};
-  color: var(--text);
-  display: grid;
-  place-items: center;
-  font-size: 13px;
-  font-weight: 800;
 `;
 
 const BackPanel = styled.div`
