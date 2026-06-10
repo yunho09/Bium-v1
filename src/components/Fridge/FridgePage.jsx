@@ -275,6 +275,7 @@ function FridgePage() {
                 leftDoorItems={zonesWithDaysLeft.leftDoor}
                 rightDoorItems={zonesWithDaysLeft.rightDoor}
                 onClickFood={setEditingFood}
+                onDeleteFood={handleDeleteFood}
               />
             </SlidingStage>
 

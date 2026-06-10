@@ -6,7 +6,7 @@ import { memo } from "react";
 import styled from "@emotion/styled";
 import FridgeZone from "./FridgeZone";
 
-function DoorZone({ side, items, onClickFood, zoneType }) {
+function DoorZone({ side, items, onClickFood, onDeleteFood, zoneType }) {
   const title = side === "left" ? "왼쪽 문" : "오른쪽 문";
   const containerId = side === "left" ? "leftDoor" : "rightDoor";
 
@@ -20,6 +20,7 @@ function DoorZone({ side, items, onClickFood, zoneType }) {
           subtitle=""
           items={items}
           onClickFood={onClickFood}
+          onDeleteFood={onDeleteFood}
           compact
           door
           sortable={false}
@@ -31,11 +32,17 @@ function DoorZone({ side, items, onClickFood, zoneType }) {
 
 const MemoDoorZone = memo(DoorZone);
 
-function FridgeBoard({ zone, leftDoorItems, rightDoorItems, onClickFood }) {
+function FridgeBoard({ zone, leftDoorItems, rightDoorItems, onClickFood, onDeleteFood }) {
   return (
     <Stage>
       <FridgeShell $zone={zone.id}>
-        <MemoDoorZone side="left" zoneType={zone.id} items={leftDoorItems} onClickFood={onClickFood} />
+        <MemoDoorZone
+          side="left"
+          zoneType={zone.id}
+          items={leftDoorItems}
+          onClickFood={onClickFood}
+          onDeleteFood={onDeleteFood}
+        />
 
         <Cabinet $zone={zone.id}>
           <BackPanel $zone={zone.id} />
@@ -50,6 +57,7 @@ function FridgeBoard({ zone, leftDoorItems, rightDoorItems, onClickFood }) {
               subtitle={zone.subtitle}
               items={zone.items}
               onClickFood={onClickFood}
+              onDeleteFood={onDeleteFood}
               compact
             />
           </ShelfArea>
@@ -63,7 +71,13 @@ function FridgeBoard({ zone, leftDoorItems, rightDoorItems, onClickFood }) {
           </BottomBins>
         </Cabinet>
 
-        <MemoDoorZone side="right" zoneType={zone.id} items={rightDoorItems} onClickFood={onClickFood} />
+        <MemoDoorZone
+          side="right"
+          zoneType={zone.id}
+          items={rightDoorItems}
+          onClickFood={onClickFood}
+          onDeleteFood={onDeleteFood}
+        />
       </FridgeShell>
     </Stage>
   );
