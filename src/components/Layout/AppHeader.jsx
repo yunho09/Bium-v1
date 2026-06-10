@@ -14,8 +14,8 @@ const menus = [
 function AppHeader({ activeMenu, onSelectMenu }) {
   return (
     <Header>
-      <Brand>
-        <LogoMark>▣</LogoMark>
+      <Brand type="button" onClick={() => onSelectMenu("fridge")} aria-label="홈으로 이동">
+        <LogoMark>B</LogoMark>
         <h1>Bium</h1>
       </Brand>
 
@@ -65,10 +65,14 @@ const Header = styled.header`
   }
 `;
 
-const Brand = styled.div`
+const Brand = styled.button`
+  border: 0;
+  background: transparent;
+  padding: 0;
   display: flex;
   align-items: center;
   gap: 7px;
+  cursor: pointer;
 
   h1 {
     font-size: 24px;
@@ -87,6 +91,7 @@ const LogoMark = styled.span`
   display: grid;
   place-items: center;
   font-size: 11px;
+  font-weight: 700;
   line-height: 1;
 `;
 

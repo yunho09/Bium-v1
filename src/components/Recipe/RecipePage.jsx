@@ -124,30 +124,30 @@ export default RecipePage;
 
 const Wrapper = styled.section`
   display: grid;
-  gap: 32px;
+  gap: 24px;
 `;
 
 const Header = styled.header`
   display: grid;
   justify-items: start;
-  gap: 24px;
-  border-radius: 24px;
+  gap: 14px;
+  border-radius: 16px;
   background: var(--block-lilac);
-  padding: 48px;
+  padding: 24px 28px;
 
   @media (max-width: 760px) {
     border-radius: 0;
     margin-inline: -12px;
-    padding: 32px 24px;
+    padding: 22px 20px;
   }
 `;
 
 const Title = styled.h1`
   max-width: 840px;
-  font-size: clamp(40px, 7vw, 72px);
-  line-height: 1.04;
-  font-weight: 340;
-  letter-spacing: -0.96px;
+  font-size: clamp(26px, 4vw, 38px);
+  line-height: 1.16;
+  font-weight: 480;
+  letter-spacing: -0.26px;
   color: var(--text);
 `;
 

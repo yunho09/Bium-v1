@@ -59,7 +59,7 @@ function RecipeDetailPage({ recipe, onBack }) {
           </Section>
 
           <Section>
-            <SectionTitle>AI 활용 팁</SectionTitle>
+            <SectionTitle>활용 팁</SectionTitle>
             <TipList>
               {recipe.tips.map((tip) => (
                 <li key={`${recipe.id}-tip-${tip}`}>{tip}</li>
@@ -159,15 +159,15 @@ const Hero = styled.header`
 `;
 
 const HeroCopy = styled.div`
-  padding: 44px;
+  padding: 32px 36px;
   display: grid;
   align-content: center;
-  gap: 22px;
+  gap: 16px;
 
   h1 {
-    font-size: clamp(36px, 6vw, 68px);
-    line-height: 1.04;
-    font-weight: 340;
+    font-size: clamp(28px, 4.5vw, 44px);
+    line-height: 1.12;
+    font-weight: 480;
     letter-spacing: 0;
     color: var(--text);
   }
@@ -223,7 +223,7 @@ const MetaItem = styled.div`
 `;
 
 const HeroVisual = styled.div`
-  min-height: 330px;
+  min-height: 280px;
   background: ${(props) => props.$cover};
   display: grid;
   place-items: center;

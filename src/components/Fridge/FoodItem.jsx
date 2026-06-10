@@ -28,8 +28,7 @@ function FoodItem({
   const isExpired = daysLeft < 0;
   const isUrgent = daysLeft >= 0 && daysLeft <= 3;
   const isSafe = daysLeft >= 7;
-  // 상태 배지는 사용자가 재료의 신선도를 빠르게 판단하게 해준다.
-  const badgeText = isExpired ? `만료 ${Math.abs(daysLeft)}일` : `D-${daysLeft}`;
+  const badgeText = isExpired ? `만료 ${Math.abs(daysLeft)}일` : daysLeft === 0 ? "오늘" : `D-${daysLeft}`;
 
   return (
     <ItemCard
