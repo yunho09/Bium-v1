@@ -5,6 +5,7 @@
 import { memo } from "react";
 import styled from "@emotion/styled";
 import { keyframes } from "@emotion/react";
+import { Trash2 } from "lucide-react";
 
 function getDaysLeft(expiresAt) {
   const today = new Date();
@@ -25,6 +26,7 @@ function getFreshness(daysLeft) {
 function FoodItem({
   item,
   onClick,
+  onDelete,
   dragAttributes,
   dragListeners,
   isDragging,
@@ -37,6 +39,18 @@ function FoodItem({
   const freshness = getFreshness(daysLeft);
   const badgeText = isExpired ? `만료 ${Math.abs(daysLeft)}일` : daysLeft === 0 ? "오늘" : `D-${daysLeft}`;
   const isWarning = freshness === "today" || freshness === "urgent";
+  const showDeleteButton = Boolean(onDelete) && !list && !preview;
+
+  const deleteFood = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!window.confirm(`${item.name}을(를) 삭제할까요?`)) return;
+    onDelete?.(item.id);
+  };
+
+  const stopDeleteDrag = (event) => {
+    event.stopPropagation();
+  };
 
   return (
     <ItemCard
@@ -50,6 +64,18 @@ function FoodItem({
       {...dragAttributes}
       {...dragListeners}
     >
+      {showDeleteButton && (
+        <DeleteButton
+          type="button"
+          aria-label={`${item.name} 삭제`}
+          $door={door}
+          onClick={deleteFood}
+          onPointerDown={stopDeleteDrag}
+          onMouseDown={stopDeleteDrag}
+        >
+          <Trash2 size={12} strokeWidth={2.4} />
+        </DeleteButton>
+      )}
       <Badge $freshness={freshness} $door={door}>
         {badgeText}
       </Badge>
@@ -216,6 +242,36 @@ const Badge = styled.span`
     props.$freshness === "today" || props.$freshness === "urgent" || props.$freshness === "soon"
       ? badgeBlink
       : "none"} 0.8s infinite;
+`;
+
+const DeleteButton = styled.button`
+  position: absolute;
+  left: ${(props) => (props.$door ? "auto" : "5px")};
+  top: ${(props) => (props.$door ? "auto" : "5px")};
+  right: ${(props) => (props.$door ? "5px" : "auto")};
+  bottom: ${(props) => (props.$door ? "5px" : "auto")};
+  z-index: 2;
+  width: ${(props) => (props.$door ? "20px" : "22px")};
+  height: ${(props) => (props.$door ? "20px" : "22px")};
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #7f1d1d;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 2px 7px rgba(31, 40, 34, 0.16);
+  cursor: pointer;
+  opacity: 0.92;
+  transition:
+    transform 0.16s ease,
+    background 0.16s ease,
+    opacity 0.16s ease;
+
+  &:hover {
+    opacity: 1;
+    background: #fee2e2;
+    transform: scale(1.08);
+  }
 `;
 
 const Sweat = styled.span`
