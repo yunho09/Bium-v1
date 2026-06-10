@@ -27,9 +27,8 @@ const zoneMeta = {
 function FridgePage() {
   const zones = useFridgeStore((state) => state.zones);
   const setZones = useFridgeStore((state) => state.setZones);
-  const presets = useFridgeStore((state) => state.presets);
   const saveFood = useFridgeStore((state) => state.saveFood);
-  const addCustomPreset = useFridgeStore((state) => state.addCustomPreset);
+  const removeFood = useFridgeStore((state) => state.removeFood);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState("right");
@@ -153,6 +152,19 @@ function FridgePage() {
     setEditingFood(null);
   }, [saveFood]);
 
+  const handleMoveToShoppingBag = useCallback((food) => {
+    saveFood({
+      ...food,
+      zoneKey: "shoppingBag",
+    });
+    setEditingFood(null);
+  }, [saveFood]);
+
+  const handleDeleteFood = useCallback((foodId) => {
+    removeFood(foodId);
+    setEditingFood(null);
+  }, [removeFood]);
+
   const getAutoZoneForFood = useCallback((food) => {
     const preset = DEFAULT_FOOD_PRESETS.find((item) => item.name === food.name);
     const daysLeft = Math.round(
@@ -222,18 +234,14 @@ function FridgePage() {
                 <ChevronLeft size={28} />
               </ArrowButton>
               <ZoneTitle>
-                <ChevronLeft size={20} />
-                <strong>
-                  {activeZone.icon} {activeZone.title}
-                </strong>
-                <ChevronRight size={20} />
+                <strong>{activeZone.title}</strong>
               </ZoneTitle>
               <ArrowButton type="button" aria-label="다음" onClick={() => movePage("right")}>
                 <ChevronRight size={28} />
               </ArrowButton>
             </Pager>
 
-            <SlidingStage $direction={direction}>
+            <SlidingStage key={activeZoneId} $direction={direction}>
               <FridgeBoard
                 zone={activeZone}
                 leftDoorItems={zonesWithDaysLeft.leftDoor}
@@ -284,12 +292,11 @@ function FridgePage() {
 
       <FoodModal
         open={Boolean(editingFood)}
-        mode="edit"
         initialValue={editingFood}
-        presets={presets}
-        onAddPreset={addCustomPreset}
         onClose={handleCloseModal}
         onSave={handleSaveFood}
+        onDelete={handleDeleteFood}
+        onMoveToShoppingBag={handleMoveToShoppingBag}
       />
     </Wrapper>
   );
@@ -337,7 +344,7 @@ const Pager = styled.div`
   grid-template-columns: 48px minmax(220px, auto) 48px;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 8px;
   width: 100%;
 `;
 
