@@ -6,7 +6,7 @@ import { useCallback, useMemo, useState } from "react";
 import styled from "@emotion/styled";
 import { keyframes } from "@emotion/react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { DndContext, DragOverlay, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, DragOverlay, PointerSensor, TouchSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import FridgeBoard from "./FridgeBoard";
 import FridgeZone from "./FridgeZone";
@@ -36,7 +36,10 @@ function FridgePage() {
   const [editingFood, setEditingFood] = useState(null);
   const [draggingFood, setDraggingFood] = useState(null);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 6 } }),
+  );
 
   const zonesWithDaysLeft = useMemo(() => {
     const today = new Date();

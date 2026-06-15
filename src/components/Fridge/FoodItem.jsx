@@ -182,6 +182,7 @@ const ItemCard = styled.button`
   place-items: ${(props) => (props.$list || props.$door ? "center start" : "center")};
   gap: 3px;
   cursor: grab;
+  touch-action: none;
   transition:
     transform 0.18s ease,
     opacity 0.18s ease,
@@ -261,6 +262,7 @@ const DeleteButton = styled.button`
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 2px 7px rgba(31, 40, 34, 0.16);
   cursor: pointer;
+  touch-action: manipulation;
   opacity: 0.92;
   transition:
     transform 0.16s ease,

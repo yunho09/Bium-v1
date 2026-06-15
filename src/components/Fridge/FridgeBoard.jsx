@@ -169,7 +169,7 @@ const FridgeShell = styled.section`
   @media (max-width: 760px) {
     width: min(560px, 100%);
     min-height: 390px;
-    grid-template-columns: 82px minmax(240px, 1fr) 82px;
+    grid-template-columns: 64px minmax(0, 1fr) 64px;
   }
 `;
 
