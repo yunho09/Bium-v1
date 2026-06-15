@@ -45,7 +45,7 @@ const BASIC_INGREDIENTS = [
 function buildPrompt({ ingredients, prioritizeUrgent }) {
   const ingredientLines = ingredients
     .map((item) => {
-      const dDay = item.daysLeft < 0 ? `expired ${Math.abs(item.daysLeft)} days ago` : `D-${item.daysLeft}`;
+      const dDay = `D-${item.daysLeft}`;
       return `- ${item.name} (${item.icon || ""}) / ${dDay} / zone: ${item.zoneKey}`;
     })
     .join("\n");
@@ -55,9 +55,12 @@ function buildPrompt({ ingredients, prioritizeUrgent }) {
 아래 냉장고 재료만 최대한 활용해서 한국어 레시피 후보 6개를 만들어줘.
 
 조건:
-- 유통기한이 지난 재료는 사용하지 마.
+- 아래 목록에는 유통기한이 지난 재료가 제외되어 있어. 목록에 없는 재료는 사용자가 가진 재료로 취급하지 마.
 - ${prioritizeUrgent ? "D-Day가 낮은 임박 재료를 우선 사용해." : "임박 재료 우선 조건은 약하게 반영해."}
-- 냉장고에 없는 특수 재료를 필수 재료로 만들지 마. 소금, 후추, 식용유, 물, 간장 같은 기본 양념은 사용 가능해.
+- 아래 냉장고 재료 목록에 없는 식재료를 필수 재료로 만들지 마.
+- 소금, 후추, 식용유, 물, 간장 같은 기본 양념만 예외로 사용할 수 있어.
+- detailIngredients에서 required가 true인 항목은 반드시 아래 냉장고 재료 목록 또는 기본 양념이어야 해.
+- fridgeMatches에는 아래 냉장고 재료 목록에 실제로 있는 재료명만 넣어.
 - 이상하거나 실험적인 조합은 만들지 마. 실제 자취생이 바로 먹을 만한 평범한 집밥 메뉴만 추천해.
 - 메뉴 유형 목록에 맞추려고 하지 말고, 냉장고 재료에 자연스럽게 어울리는 실제 집밥으로 제안해.
 - 후보 레시피들은 서로 다른 주재료 조합, 맛의 방향, 식감, 조리 흐름이 느껴지게 구성해.
@@ -120,14 +123,31 @@ function ensureArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
-function isAvailableIngredient(name, availableIngredientNames) {
-  return availableIngredientNames.some((availableName) => name.includes(availableName) || availableName.includes(name));
-}
-
 function normalizeComparableText(value) {
   return String(value || "")
     .replace(/[^\p{L}\p{N}]/gu, "")
     .toLowerCase();
+}
+
+function isAvailableIngredient(name, availableIngredientNames) {
+  const normalizedName = normalizeComparableText(name);
+  if (!normalizedName) return false;
+
+  return availableIngredientNames.some((availableName) => {
+    const normalizedAvailableName = normalizeComparableText(availableName);
+    if (!normalizedAvailableName) return false;
+    return normalizedName.includes(normalizedAvailableName) || normalizedAvailableName.includes(normalizedName);
+  });
+}
+
+function isBasicIngredient(name) {
+  const normalizedName = normalizeComparableText(name);
+  if (!normalizedName) return false;
+  return BASIC_INGREDIENTS.some((basicIngredient) => normalizeComparableText(basicIngredient) === normalizedName);
+}
+
+function isAllowedIngredient(name, availableIngredientNames) {
+  return isAvailableIngredient(name, availableIngredientNames) || isBasicIngredient(name);
 }
 
 function getRecipeIngredientNames(recipe) {
@@ -140,18 +160,25 @@ function getRecipeIngredientNames(recipe) {
 }
 
 function normalizeRecipe(recipe, index, availableIngredientNames) {
-  const detailIngredients = ensureArray(recipe.detailIngredients).map((ingredient) => ({
-    name: ingredient.name || "재료",
-    amount: ingredient.amount || "적당량",
-    status:
-      ingredient.status ||
-      (isAvailableIngredient(ingredient.name || "", availableIngredientNames) ? "냉장고 보유" : "기본 양념 또는 선택 재료"),
-    required:
-      Boolean(ingredient.required) &&
-      (isAvailableIngredient(ingredient.name || "", availableIngredientNames) || BASIC_INGREDIENTS.includes(ingredient.name)),
-  }));
+  const detailIngredients = ensureArray(recipe.detailIngredients)
+    .filter((ingredient) => isAllowedIngredient(ingredient.name || "", availableIngredientNames))
+    .map((ingredient) => ({
+      name: ingredient.name || "재료",
+      amount: ingredient.amount || "적당량",
+      status: ingredient.status || (isAvailableIngredient(ingredient.name || "", availableIngredientNames) ? "냉장고 보유" : "기본 양념"),
+      required: Boolean(ingredient.required) && isAllowedIngredient(ingredient.name || "", availableIngredientNames),
+    }));
   const fallbackIngredients = detailIngredients.map((ingredient) => ingredient.name).filter(Boolean);
-  const fallbackMatches = fallbackIngredients.slice(0, 6);
+  const visibleIngredients = ensureArray(recipe.ingredients)
+    .filter((ingredient) => isAllowedIngredient(ingredient, availableIngredientNames))
+    .slice(0, 5);
+  const fridgeMatches = ensureArray(recipe.fridgeMatches)
+    .filter((ingredient) => isAvailableIngredient(ingredient, availableIngredientNames))
+    .slice(0, 6);
+  const fallbackMatches = detailIngredients
+    .map((ingredient) => ingredient.name)
+    .filter((ingredient) => isAvailableIngredient(ingredient, availableIngredientNames))
+    .slice(0, 6);
 
   return {
     id: `ai-recipe-${Date.now()}-${index}`,
@@ -163,7 +190,7 @@ function normalizeRecipe(recipe, index, availableIngredientNames) {
     emoji: recipe.emoji || "🍽️",
     summary: recipe.summary || "냉장고 재료를 활용한 맞춤형 레시피입니다.",
     cover: RECIPE_COVERS[index % RECIPE_COVERS.length],
-    ingredients: ensureArray(recipe.ingredients).length > 0 ? ensureArray(recipe.ingredients).slice(0, 5) : fallbackIngredients,
+    ingredients: visibleIngredients.length > 0 ? visibleIngredients : fallbackIngredients.slice(0, 5),
     detailIngredients,
     steps: ensureArray(recipe.steps).slice(0, 6),
     tips: ensureArray(recipe.tips).length > 0 ? ensureArray(recipe.tips).slice(0, 3) : ["가지고 있는 재료를 먼저 사용하면 음식물 쓰레기를 줄일 수 있어요."],
@@ -175,8 +202,14 @@ function normalizeRecipe(recipe, index, availableIngredientNames) {
             { label: "탄수화물", value: "확인 필요" },
             { label: "지방", value: "확인 필요" },
           ],
-    fridgeMatches: ensureArray(recipe.fridgeMatches).length > 0 ? ensureArray(recipe.fridgeMatches).slice(0, 6) : fallbackMatches,
+    fridgeMatches: fridgeMatches.length > 0 ? fridgeMatches : fallbackMatches,
   };
+}
+
+function hasUnavailableRequiredIngredient(recipe, availableIngredientNames) {
+  return ensureArray(recipe.detailIngredients).some(
+    (ingredient) => Boolean(ingredient.required) && !isAllowedIngredient(ingredient.name || "", availableIngredientNames),
+  );
 }
 
 function isPracticalRecipe(recipe, availableIngredientNames) {
@@ -184,8 +217,9 @@ function isPracticalRecipe(recipe, availableIngredientNames) {
   const hasOddTerm = ODD_RECIPE_TERMS.some((term) => recipeText.includes(term));
   const usesFridgeIngredient = availableIngredientNames.some((name) => recipeText.includes(name));
   const hasUsableName = normalizeComparableText(recipe.name).length >= 2;
+  const hasIngredients = recipe.detailIngredients.length > 0 && recipe.fridgeMatches.length > 0;
 
-  return !hasOddTerm && usesFridgeIngredient && hasUsableName;
+  return !hasOddTerm && usesFridgeIngredient && hasUsableName && hasIngredients;
 }
 
 function countSharedItems(leftItems, rightItems) {
@@ -233,6 +267,12 @@ export async function generateRecipes({ ingredients, prioritizeUrgent }) {
     throw new Error(".env.local에 VITE_GEMINI_API_KEY를 설정해 주세요.");
   }
 
+  const usableIngredients = ingredients.filter((ingredient) => ingredient.daysLeft >= 0);
+
+  if (usableIngredients.length === 0) {
+    throw new Error("유통기한이 남아 있는 재료가 없어 추천할 수 없습니다.");
+  }
+
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
     {
@@ -244,7 +284,7 @@ export async function generateRecipes({ ingredients, prioritizeUrgent }) {
         contents: [
           {
             role: "user",
-            parts: [{ text: buildPrompt({ ingredients, prioritizeUrgent }) }],
+            parts: [{ text: buildPrompt({ ingredients: usableIngredients, prioritizeUrgent }) }],
           },
         ],
         generationConfig: {
@@ -263,10 +303,9 @@ export async function generateRecipes({ ingredients, prioritizeUrgent }) {
 
   const data = await response.json();
   const parsed = parseJsonText(extractResponseText(data));
-  const availableIngredientNames = ingredients
-    .filter((ingredient) => ingredient.daysLeft >= 0)
-    .map((ingredient) => ingredient.name);
+  const availableIngredientNames = usableIngredients.map((ingredient) => ingredient.name);
   const recipeCandidates = ensureArray(parsed.recipes)
+    .filter((recipe) => !hasUnavailableRequiredIngredient(recipe, availableIngredientNames))
     .map((recipe, index) => normalizeRecipe(recipe, index, availableIngredientNames))
     .filter((recipe) => recipe.steps.length > 0 && isPracticalRecipe(recipe, availableIngredientNames));
   const recipes = selectDiverseRecipes(recipeCandidates);

@@ -42,6 +42,10 @@ function RecipePage() {
       .slice(0, 5);
   }, [fridgeItems]);
 
+  const recipeIngredients = useMemo(() => {
+    return fridgeItems.filter((item) => item.daysLeft >= 0);
+  }, [fridgeItems]);
+
   const handleGenerate = async () => {
     setLoading(true);
     setErrorMessage("");
@@ -50,7 +54,7 @@ function RecipePage() {
 
     try {
       const nextRecipes = await generateRecipes({
-        ingredients: fridgeItems,
+        ingredients: recipeIngredients,
         prioritizeUrgent,
       });
       setRecipes(nextRecipes);
