@@ -23,7 +23,7 @@ function getFreshness(daysLeft) {
   return "safe";
 }
 
-function FoodItem({
+function IngredientItem({
   item,
   onClick,
   onDelete,
@@ -88,7 +88,7 @@ function FoodItem({
   );
 }
 
-export default memo(FoodItem);
+export default memo(IngredientItem);
 
 const sweatDrop = keyframes`
   0% { transform: translateY(-4px); opacity: 0; }

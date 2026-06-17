@@ -7,11 +7,11 @@ import styled from "@emotion/styled";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import FoodItem from "./FoodItem";
+import IngredientItem from "./IngredientItem";
 
 const DOOR_SLOT_COUNT = 5;
 
-function SortableFoodItem({ item, onClickFood, onDeleteFood, list, door }) {
+function SortableIngredientItem({ item, onClickFood, onDeleteFood, list, door }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
 
   const style = {
@@ -22,7 +22,7 @@ function SortableFoodItem({ item, onClickFood, onDeleteFood, list, door }) {
 
   return (
     <div ref={setNodeRef} style={style}>
-      <FoodItem
+      <IngredientItem
         item={item}
         onClick={() => onClickFood(item)}
         onDelete={onDeleteFood}
@@ -37,14 +37,14 @@ function SortableFoodItem({ item, onClickFood, onDeleteFood, list, door }) {
   );
 }
 
-const MemoSortableFoodItem = memo(SortableFoodItem);
+const MemoSortableIngredientItem = memo(SortableIngredientItem);
 
-function DraggableFoodItem({ item, onClickFood, onDeleteFood, list, door }) {
+function DraggableIngredientItem({ item, onClickFood, onDeleteFood, list, door }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: item.id });
 
   return (
     <div ref={setNodeRef}>
-      <FoodItem
+      <IngredientItem
         item={item}
         onClick={() => onClickFood(item)}
         onDelete={onDeleteFood}
@@ -59,7 +59,7 @@ function DraggableFoodItem({ item, onClickFood, onDeleteFood, list, door }) {
   );
 }
 
-const MemoDraggableFoodItem = memo(DraggableFoodItem);
+const MemoDraggableIngredientItem = memo(DraggableIngredientItem);
 
 function FridgeZone({
   containerId,
@@ -97,7 +97,7 @@ function FridgeZone({
         <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
           <ZoneGrid $compact={compact} $list={list} $door={door}>
             {displayItems.map((item) => (
-              <MemoSortableFoodItem
+              <MemoSortableIngredientItem
                 key={item.id}
                 item={item}
                 onClickFood={onClickFood}
@@ -117,7 +117,7 @@ function FridgeZone({
       ) : (
         <ZoneGrid $compact={compact} $list={list} $door={door}>
           {displayItems.map((item) => (
-            <MemoDraggableFoodItem
+            <MemoDraggableIngredientItem
               key={item.id}
               item={item}
               onClickFood={onClickFood}

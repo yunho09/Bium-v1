@@ -10,7 +10,7 @@ import { DndContext, DragOverlay, PointerSensor, TouchSensor, closestCenter, use
 import { arrayMove } from "@dnd-kit/sortable";
 import FridgeBoard from "./FridgeBoard";
 import FridgeZone from "./FridgeZone";
-import FoodItem from "./FoodItem";
+import IngredientItem from "./IngredientItem";
 import FoodModal from "./FoodModal";
 import { DEFAULT_FOOD_PRESETS } from "../../store/fridgePresets";
 import { CONTAINER_IDS, useFridgeStore } from "../../store/useFridgeStore";
@@ -321,7 +321,7 @@ function FridgePage() {
         <DragOverlay dropAnimation={{ duration: 180 }}>
           {draggingFood ? (
             <OverlayCard>
-              <FoodItem item={draggingFood} daysLeft={draggingFood.daysLeft} preview />
+              <IngredientItem item={draggingFood} daysLeft={draggingFood.daysLeft} preview />
             </OverlayCard>
           ) : null}
         </DragOverlay>
