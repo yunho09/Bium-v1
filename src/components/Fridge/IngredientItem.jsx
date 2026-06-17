@@ -98,9 +98,10 @@ const sweatDrop = keyframes`
 
 const shake = keyframes`
   0%, 100% { transform: translateX(0) rotate(0deg); }
-  25% { transform: translateX(-1px) rotate(-2deg); }
-  50% { transform: translateX(1px) rotate(2deg); }
-  75% { transform: translateX(-1px) rotate(-2deg); }
+  20% { transform: translateX(-3px) rotate(-7deg); }
+  40% { transform: translateX(3px) rotate(7deg); }
+  60% { transform: translateX(-2px) rotate(-5deg); }
+  80% { transform: translateX(2px) rotate(5deg); }
 `;
 
 const dangerPulse = keyframes`
@@ -110,18 +111,18 @@ const dangerPulse = keyframes`
 
 const urgentWiggle = keyframes`
   0%, 100% { transform: rotate(0deg) scale(1); }
-  35% { transform: rotate(-8deg) scale(1.08); }
-  70% { transform: rotate(8deg) scale(1.08); }
+  30% { transform: rotate(-14deg) scale(1.18); }
+  65% { transform: rotate(14deg) scale(1.18); }
 `;
 
 const soonBounce = keyframes`
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  45% { transform: translateY(-1px) scale(1.08); }
 `;
 
 const safeFloat = keyframes`
   0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-4px) rotate(3deg); }
+  50% { transform: translateY(0px) rotate(5deg); }
 `;
 
 const badgeBlink = keyframes`
@@ -153,12 +154,19 @@ const badgeBackgroundByFreshness = {
   safe: "#45bd75",
 };
 
-const getIconAnimation = (freshness) => {
-  if (freshness === "expired") return `${shake} 0.8s infinite`;
-  if (freshness === "today") return `${urgentWiggle} 0.7s infinite`;
-  if (freshness === "urgent") return `${urgentWiggle} 1s infinite`;
-  if (freshness === "soon") return `${soonBounce} 1.5s infinite`;
-  return `${safeFloat} 2.8s infinite`;
+const getIconKeyframes = (freshness) => {
+  if (freshness === "expired") return shake;
+  if (freshness === "today" || freshness === "urgent") return urgentWiggle;
+  if (freshness === "soon") return soonBounce;
+  return safeFloat;
+};
+
+const getIconAnimationDuration = (freshness) => {
+  if (freshness === "expired") return "0.58s";
+  if (freshness === "today") return "0.5s";
+  if (freshness === "urgent") return "0.8s";
+  if (freshness === "soon") return "1.05s";
+  return "2.15s";
 };
 
 const ItemCard = styled.button`
@@ -209,7 +217,10 @@ const IconEmoji = styled.span`
   filter: ${(props) => (props.$freshness === "expired" ? "grayscale(1)" : "none")};
   transform-origin: center;
   will-change: transform;
-  animation: ${(props) => getIconAnimation(props.$freshness)};
+  animation-name: ${(props) => getIconKeyframes(props.$freshness)};
+  animation-duration: ${(props) => getIconAnimationDuration(props.$freshness)};
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
 `;
 
 const Name = styled.strong`
@@ -258,6 +269,8 @@ const DeleteButton = styled.button`
   border-radius: 50%;
   display: grid;
   place-items: center;
+  padding: 0;
+  line-height: 0;
   color: #7f1d1d;
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 2px 7px rgba(31, 40, 34, 0.16);
@@ -273,6 +286,10 @@ const DeleteButton = styled.button`
     opacity: 1;
     background: #fee2e2;
     transform: scale(1.08);
+  }
+
+  svg {
+    display: block;
   }
 `;
 

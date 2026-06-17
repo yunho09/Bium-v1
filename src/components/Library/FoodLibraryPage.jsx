@@ -516,6 +516,8 @@ const BagDate = styled.em`
 const BagEditButton = styled.button`
   grid-column: 3;
   grid-row: 1 / span 2;
+  align-self: center;
+  justify-self: center;
   width: 32px;
   height: 32px;
   border: 0;
@@ -524,7 +526,13 @@ const BagEditButton = styled.button`
   color: var(--text);
   display: grid;
   place-items: center;
+  padding: 0;
+  line-height: 0;
   cursor: pointer;
+
+  svg {
+    display: block;
+  }
 
   &:hover {
     background: var(--block-lilac);
