@@ -6,7 +6,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { DEFAULT_FOOD_PRESETS } from "./fridgePresets";
 
-const STORE_VERSION = 3;
+const STORE_VERSION = 4;
 export const CONTAINER_IDS = ["shoppingBag", "leftDoor", "rightDoor", "pantry", "fridge", "freezer"];
 
 function addDays(baseDate, days) {
@@ -49,17 +49,19 @@ function presetById(id) {
 
 const initialZones = {
   shoppingBag: [
-    makeFood(presetById("milk"), 7),
-    makeFood(presetById("tofu"), 5),
+    makeFood(presetById("egg"), 9),
+    makeFood(presetById("lettuce"), 4),
     makeFood(presetById("pork"), 3),
     makeFood(presetById("strawberry"), 2),
     makeFood(presetById("bread"), 1),
+    makeFood(presetById("tofu"), 5),
   ],
   pantry: [
-    makeFood(presetById("onion"), 18, "pantry"),
-    makeFood(presetById("potato"), 40, "pantry"),
-    makeFood(presetById("sweet-potato"), 21, "pantry"),
+    makeFood(presetById("onion"), 16, "pantry"),
+    makeFood(presetById("potato"), 35, "pantry"),
+    makeFood(presetById("sweet-potato"), 22, "pantry"),
     makeFood(presetById("garlic"), 28, "pantry"),
+    makeFood(presetById("canned-tuna"), 180, "pantry"),
     makeFood(presetById("ramen"), 90, "pantry"),
   ],
   fridge: [
@@ -68,6 +70,7 @@ const initialZones = {
     makeFood(presetById("spinach"), 1, "fridge"),
     makeFood(presetById("tofu"), 3, "fridge"),
     makeFood(presetById("tomato"), 4, "fridge"),
+    makeFood(presetById("milk"), 5, "fridge"),
     makeFood(presetById("green-onion"), 7, "fridge"),
     makeFood(presetById("carrot"), 14, "fridge"),
     makeFood(presetById("kimchi"), 30, "fridge"),
@@ -81,9 +84,11 @@ const initialZones = {
   leftDoor: [
     makeFood(presetById("milk"), 5, "leftDoor"),
     makeFood(presetById("yogurt"), 8, "leftDoor"),
+    makeFood(presetById("cheese"), 12, "leftDoor"),
     makeFood(presetById("butter"), 35, "leftDoor"),
   ],
   rightDoor: [
+    makeFood(presetById("banana"), 2, "rightDoor"),
     makeFood(presetById("grape"), 6, "rightDoor"),
     makeFood(presetById("orange"), 10, "rightDoor"),
     makeFood(presetById("apple"), 21, "rightDoor"),
